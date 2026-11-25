@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.lastwave.app.MainShellActivity
 import com.lastwave.app.R
@@ -181,12 +182,7 @@ internal class LockScreenArtworkController(
             ),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Notification.Builder(appContext, CHANNEL_ID)
-        } else {
-            @Suppress("DEPRECATION") Notification.Builder(appContext)
-        }
-        val notification = builder
+        val notification = NotificationCompat.Builder(appContext, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_logo)
             .setContentTitle(track.title)
             .setContentText(track.artist)
@@ -197,9 +193,7 @@ internal class LockScreenArtworkController(
             .setOnlyAlertOnce(true)
             .setShowWhen(false)
             .setFullScreenIntent(showCover, true)
-            .apply {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) setSilent(true)
-            }
+            .setSilent(true)
             .build()
         runCatching { manager.notify(NOTIFICATION_ID, notification) }
             .onFailure { error ->
