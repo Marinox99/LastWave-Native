@@ -1626,6 +1626,18 @@ fun SettingsScreen(
                 }
             }
 
+                        item {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    SectionLabel("Lock screen")
+                    SettingsGroup(rowCount = 1) { _, position ->
+                        LockScreenArtSettingCard(
+                            position = position,
+                            isHighlighted = (highlightedSettingId == "appearance.lock_screen_art"),
+                        )
+                    }
+                }
+            }
+
                     }
 
                     SettingsTab.YOUTUBE -> {

@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.SmartDisplay
+import androidx.compose.material.icons.filled.StayCurrentPortrait
 import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.SwitchAccount
 import androidx.compose.material.icons.filled.TextFields
@@ -748,6 +749,23 @@ object SettingsSearchIndex {
                     iconTint = { MaterialTheme.colorScheme.onPrimaryContainer },
                     parentTab = SettingsTab.APPEARANCE,
                     section = "Experimental & Features",
+                    type = EntryType.TOGGLE,
+                )
+            )
+            add(
+                SettingsEntry(
+                    id = "appearance.lock_screen_art",
+                    title = "Full-Screen Lock Screen Cover",
+                    subtitle = "Show the album cover across the lock screen while music plays (off by default)",
+                    keywords = listOf(
+                        "lock screen", "lockscreen", "album art", "cover art", "full screen",
+                        "fullscreen", "keyguard", "now playing cover", "lock screen artwork"
+                    ),
+                    icon = Icons.Filled.StayCurrentPortrait,
+                    iconContainer = { MaterialTheme.colorScheme.primaryContainer },
+                    iconTint = { MaterialTheme.colorScheme.onPrimaryContainer },
+                    parentTab = SettingsTab.APPEARANCE,
+                    section = "Lock screen",
                     type = EntryType.TOGGLE,
                 )
             )

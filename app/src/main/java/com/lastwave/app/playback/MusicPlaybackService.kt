@@ -41,6 +41,7 @@ import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.lastwave.app.MainShellActivity
 import com.lastwave.app.R
+import com.lastwave.app.data.local.LockScreenArtPreferences
 import com.lastwave.app.data.local.ScrobblerPreferences
 import com.lastwave.app.data.local.ScrobblerSettings
 import com.lastwave.app.data.playlist.LIKED_SONGS_MODE
@@ -49,6 +50,7 @@ import com.lastwave.app.data.playlist.SavedPlaylist
 import com.lastwave.app.data.playlist.TrackLikeController
 import com.lastwave.app.data.repository.ScrobbleRepository
 import com.lastwave.app.data.repository.ThemeRepository
+import com.lastwave.app.playback.lockscreen.LockScreenArtworkController
 import com.lastwave.app.playback.resolve.MetadataLog
 
 import com.lastwave.app.widget.ActiveMediaSessionHolder
@@ -141,6 +143,7 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
     @Inject lateinit var androidAutoLibrary: AndroidAutoMediaLibrary
     @Inject lateinit var lyricsRepository: com.lastwave.app.data.lyrics.LyricsRepository
     @Inject lateinit var trackLikeController: TrackLikeController
+    @Inject lateinit var lockScreenArtPreferences: LockScreenArtPreferences
     @Inject lateinit var playlistRepository: PlaylistRepository
     @Inject lateinit var jamPlaybackSync: com.lastwave.app.playback.jam.JamPlaybackSync
     @Inject lateinit var discordPresenceManager: com.lastwave.app.presence.DiscordPresenceManager
@@ -190,6 +193,7 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
     internal var originLyricsMediaId: String? = null
     internal var artworkUrl: String? = null
     internal var artworkBitmap: Bitmap? = null
+    internal var lockScreenArtwork: LockScreenArtworkController? = null
     /**
      * The platform's `config_mediaMetadataBitmapMaxSize` (320dp in AOSP),
      * resolved against this app's resources exactly as MediaSession does, so
@@ -326,6 +330,13 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
             ownController = null
             ActiveMediaSessionHolder.ownToken = null
         }
+        lockScreenArtwork = LockScreenArtworkController(
+            context = this,
+            preferences = lockScreenArtPreferences,
+            scope = scope,
+            playerState = musicPlayer.state,
+            resolveArtworkUrl = { artworkUrl },
+        ).also { it.start() }
         notificationPalette = NotificationPalette.from(themeRepository.uiState.value.colorScheme)
         scope.launch {
             wavePlaylistShortcuts = loadWavePlaylistShortcuts()
@@ -747,6 +758,8 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
         platformSessionToken = null
         ownController?.let { controller -> ActiveMediaSessionHolder.clear(controller) }
         ActiveMediaSessionHolder.clearToken(releasedToken)
+        lockScreenArtwork?.stop()
+        lockScreenArtwork = null
         scope.cancel()
         super.onDestroy()
     }

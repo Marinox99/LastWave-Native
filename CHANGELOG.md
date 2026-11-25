@@ -1,5 +1,23 @@
 # Changelog
 
+## [5.3.1] - 2026-11-25
+
+### ✨ What's New
+
+* **Full-Screen Lock Screen Artwork:** Fill the lock screen with the current track's highest-resolution cover, with Previous, Play/Pause and Next controls that match the player. Turn it on in **Settings → Appearance → Lock screen → Full-screen lock screen cover** (off by default); on Android 14+ allow full-screen notifications when the app asks.
+
+---
+
+### ⚡ Improved
+
+* **Track Change Animation:** Changing track now blends the cover with a short fade, scale and corner-radius transition, started only once the new image is decoded, so there is no blank frame, flash or quality drop between songs.
+
+---
+
+### 🛠️ Fixed
+
+* **Paused Cover:** Pausing no longer dismisses the cover; it stays on screen with Play to resume, and closes only when playback stops, the queue ends, the device is unlocked or the option is turned off.
+
 ## [5.2.1] - 2026-11-13
 
 ### ✨ What's New

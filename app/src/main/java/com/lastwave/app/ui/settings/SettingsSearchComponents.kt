@@ -278,6 +278,7 @@ internal fun getTargetSectionIndex(settingId: String?): Int {
             "Accent Color" -> 1
             "Experimental & Features", "Experimental & Player" -> 2
             "Canvas" -> 3
+            "Lock screen" -> 4
             else -> 0
         }
         SettingsTab.YOUTUBE -> if (entry.section == "Liked Songs") 1 else 0

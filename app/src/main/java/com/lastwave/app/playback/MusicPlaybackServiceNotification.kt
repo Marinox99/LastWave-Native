@@ -248,6 +248,8 @@ internal fun MusicPlaybackService.fetchArtwork(url: String) {
             if (expectedUrl != artworkUrl) return@launch
             artworkBitmap = (result as? SuccessResult)?.drawable?.toBitmap()
             val state = musicPlayer.state.value
+            // The resolved high-resolution cover replaced the placeholder URL.
+            lockScreenArtwork?.refresh(state)
             publishSystemState(state)
             publishNotification(state, force = true)
             widgetSignature = ""

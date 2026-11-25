@@ -18,6 +18,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Android 14+ asks the user for this from Special app access before a
+         full-screen intent may cover the lock screen (see LockScreenArtPermissions). -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Target audio playback and known music players without requiring QUERY_ALL_PACKAGES -->
     <queries>
@@ -183,6 +186,17 @@
             </intent-filter>
 
         </activity>
+
+        <!-- Album cover over the keyguard. Started only by the playback
+             service's full-screen intent while the user's opt-in option is on. -->
+        <activity
+            android:name=".playback.lockscreen.LockScreenArtworkActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:showWhenLocked="true"
+            android:turnScreenOn="false"
+            android:theme="@style/Theme.LastWave" />
 
         <!-- Dynamic App Icon Launcher Aliases -->
         <!-- Legacy launcher alias (.MainActivity): 100% matches existing home screen shortcuts so they never open App Info! -->
