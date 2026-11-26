@@ -52,16 +52,14 @@ internal fun LockScreenArtSettingCard(
 ) {
     val enabled by viewModel.enabled.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    var fullScreenAllowed by remember {
-        mutableStateOf(LockScreenArtPermissions.canUseFullScreenIntents(context))
-    }
+    var gate by remember { mutableStateOf(LockScreenArtPermissions.gate(context)) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, context) {
         // The grant lives in system Settings, so re-read it when the user
         // comes back instead of showing a stale "permission required" note.
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                fullScreenAllowed = LockScreenArtPermissions.canUseFullScreenIntents(context)
+                gate = LockScreenArtPermissions.gate(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -75,14 +73,23 @@ internal fun LockScreenArtSettingCard(
         title = "Full-screen lock screen cover",
         subtitle = when {
             !enabled -> "Off • Show the album cover across the lock screen while playing"
-            !fullScreenAllowed -> "On • Allow full-screen notifications in system settings"
+            gate == LockScreenArtPermissions.Gate.FullScreenDenied ->
+                "On • Allow full-screen notifications in system settings"
+            gate == LockScreenArtPermissions.Gate.MiuiLockScreenDenied ->
+                "On • Allow \"Show on lock screen\" in Other permissions"
             else -> "On • Album cover fills the lock screen while playing"
         },
         checked = enabled,
         onCheckedChange = { value ->
             viewModel.setEnabled(value)
-            if (value && !LockScreenArtPermissions.canUseFullScreenIntents(context)) {
-                LockScreenArtPermissions.requestFullScreenIntents(context)
+            if (value) {
+                when (LockScreenArtPermissions.gate(context)) {
+                    LockScreenArtPermissions.Gate.FullScreenDenied ->
+                        LockScreenArtPermissions.requestFullScreenIntents(context)
+                    LockScreenArtPermissions.Gate.MiuiLockScreenDenied ->
+                        LockScreenArtPermissions.requestMiuiLockScreen(context)
+                    LockScreenArtPermissions.Gate.Ready -> Unit
+                }
             }
         },
         position = position,

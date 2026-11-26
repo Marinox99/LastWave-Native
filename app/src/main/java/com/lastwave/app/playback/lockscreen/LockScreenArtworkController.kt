@@ -10,6 +10,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import android.os.SystemClock
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.lastwave.app.MainShellActivity
@@ -144,7 +146,12 @@ internal class LockScreenArtworkController(
     }
 
     private fun scheduleReveal() {
-        if (!enabled || !LockScreenArtPermissions.canUseFullScreenIntents(appContext)) return
+        if (!enabled) return
+        val gate = LockScreenArtPermissions.gate(appContext)
+        if (gate != LockScreenArtPermissions.Gate.Ready) {
+            Log.i(TAG, "reveal skipped: $gate")
+            return
+        }
         revealJob?.cancel()
         revealJob = scope.launch {
             // The keyguard finishes locking a beat after the screen goes
@@ -153,7 +160,11 @@ internal class LockScreenArtworkController(
             // instead of covering the lock screen.
             delay(KEYGUARD_SETTLE_MS)
             if (!enabled || !isLocked()) return@launch
-            if (!LockScreenArtPermissions.canUseFullScreenIntents(appContext)) return@launch
+            val settled = LockScreenArtPermissions.gate(appContext)
+            if (settled != LockScreenArtPermissions.Gate.Ready) {
+                Log.i(TAG, "reveal aborted: $settled")
+                return@launch
+            }
             val state = playerState.value
             if (state.current == null || !state.isPlaying) return@launch
             sync(state)
@@ -182,6 +193,11 @@ internal class LockScreenArtworkController(
             ),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+        // The full-screen intent rides the notification's *alert* path, so
+        // everything that mutes an alert also mutes the cover: an ongoing
+        // record survives a service restart, every later post becomes a
+        // silent update, and a "silent" group notification is not meant to
+        // alert at all. The channel is already silent (no sound, no vibration).
         val notification = NotificationCompat.Builder(appContext, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_logo)
             .setContentTitle(track.title)
@@ -189,16 +205,31 @@ internal class LockScreenArtworkController(
             .setContentIntent(openApp)
             .setCategory(Notification.CATEGORY_TRANSPORT)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
             .setShowWhen(false)
             .setFullScreenIntent(showCover, true)
-            .setSilent(true)
             .build()
-        runCatching { manager.notify(NOTIFICATION_ID, notification) }
-            .onFailure { error ->
-                android.util.Log.w(TAG, "Lock-screen cover notification rejected", error)
+        // A leftover record with the same id turns this into an update, and an
+        // update never fires the full-screen intent.
+        runCatching { manager.cancel(NOTIFICATION_ID) }
+        val postedAt = SystemClock.elapsedRealtime()
+        val posted = runCatching { manager.notify(NOTIFICATION_ID, notification) }
+            .onFailure { error -> Log.w(TAG, "Lock-screen cover notification rejected", error) }
+            .isSuccess
+        if (!posted) return
+        Log.i(TAG, "cover notification posted")
+        // Posting proves nothing about the cover: the system launches the
+        // intent, and MIUI can drop it. The activity reports in when it is
+        // really created, so a silent no-show leaves a trace instead of a
+        // heads-up nobody can dismiss.
+        scope.launch {
+            delay(LAUNCH_VERIFY_MS)
+            if (LockScreenArtworkHub.coverShownAt >= postedAt) {
+                Log.i(TAG, "cover activity launched")
+            } else {
+                Log.w(TAG, "full-screen intent did not launch the cover")
+                runCatching { manager.cancel(NOTIFICATION_ID) }
             }
+        }
     }
 
     private fun ensureChannel(manager: NotificationManager) {
@@ -245,5 +276,6 @@ internal class LockScreenArtworkController(
         const val CHANNEL_ID = "lastwave_lock_screen_art_v1"
         const val NOTIFICATION_ID = 4103
         const val KEYGUARD_SETTLE_MS = 700L
+        const val LAUNCH_VERIFY_MS = 2_000L
     }
 }

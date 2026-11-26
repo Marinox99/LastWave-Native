@@ -1,5 +1,6 @@
 package com.lastwave.app.playback.lockscreen
 
+import android.os.SystemClock
 import androidx.compose.runtime.Immutable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,5 +38,18 @@ internal object LockScreenArtworkHub {
 
     fun clear() {
         if (_snapshot.value != null) _snapshot.value = null
+    }
+
+    /**
+     * Elapsed time of the last time the cover activity was really created.
+     * It tells a launched full-screen intent from a notification that was
+     * posted and then dropped before covering the keyguard.
+     */
+    @Volatile
+    var coverShownAt: Long = 0L
+        private set
+
+    fun markCoverShown() {
+        coverShownAt = SystemClock.elapsedRealtime()
     }
 }

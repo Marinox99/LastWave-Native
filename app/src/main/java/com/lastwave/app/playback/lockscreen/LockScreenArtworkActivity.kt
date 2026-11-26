@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -49,6 +50,8 @@ class LockScreenArtworkActivity : ComponentActivity() {
         window.setBackgroundDrawable(ColorDrawable(android.graphics.Color.BLACK))
         enableEdgeToEdge()
         showOverKeyguard()
+        LockScreenArtworkHub.markCoverShown()
+        Log.i(TAG, "cover activity created")
         setContent {
             val theme by themeRepository.uiState.collectAsStateWithLifecycle()
             LastWaveTheme(theme) {
@@ -60,6 +63,7 @@ class LockScreenArtworkActivity : ComponentActivity() {
                         // The service publishes before posting the intent; an
                         // empty snapshot means playback already stopped, so do
                         // not leave a black page over the lock screen.
+                        Log.i(TAG, "cover activity finished: empty snapshot")
                         finish()
                     }
                 } else {
@@ -94,7 +98,7 @@ class LockScreenArtworkActivity : ComponentActivity() {
         runCatching {
             startService(Intent(this, MusicPlaybackService::class.java).setAction(action))
         }.onFailure { error ->
-            android.util.Log.w(TAG, "Lock-screen transport action failed", error)
+            Log.w(TAG, "Lock-screen transport action failed", error)
         }
     }
 
